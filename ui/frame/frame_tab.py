@@ -57,6 +57,7 @@ class FrameTab(QWidget):
         
         # MARK: - Initial Setup
         self.setup_initial_values()
+        
     
     # MARK: - UI Setup
     

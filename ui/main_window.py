@@ -500,6 +500,8 @@ class MainWindow(QMainWindow):
                 if "dollar_variables" in data:
                     self.dollar_variables.update(data["dollar_variables"])
                     self.events.emit_variables_updated()
+                    self.update_tab_states()
+                    self.frame_tab.update_enabled_states()
                 
                 if "generated_gcodes" in data:
                     self.generated_gcodes = data["generated_gcodes"]
