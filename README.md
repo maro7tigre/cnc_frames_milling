@@ -178,10 +178,8 @@ Before submitting a PR, ensure:
 
 - [ ] 3D toolpath visualization
 - [ ] Advanced collision detection
-- [ ] Multi-language support
-- [ ] Cloud storage integration
-- [ ] Batch processing for multiple frames
-- [ ] Custom formula editor for calculations
+- [ ] Multi-language support 
+- [ ] Highlight the selected L variable in the preview
 
 ## License
 
