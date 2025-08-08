@@ -444,7 +444,6 @@ class MainWindow(QMainWindow):
         return False
     
     # MARK: - Project Management
-    
     def save_project(self):
         """Save project as a single JSON file with file dialog"""
         # Generate default filename with current date and time
@@ -460,6 +459,10 @@ class MainWindow(QMainWindow):
         
         if not filename:
             return False  # User cancelled
+        
+        # Automatically add .json extension if not present
+        if not filename.lower().endswith('.json'):
+            filename += '.json'
         
         try:
             # Ensure projects directory exists
