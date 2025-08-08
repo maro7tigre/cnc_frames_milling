@@ -1,0 +1,39 @@
+{
+    "background": {
+        "primary": "#F0F0F0",
+        "secondary": "#E5E5E5",
+        "tertiary": "#DDDDDD",
+        "input": "#FFFFFF"
+    },
+    "text": {
+        "primary": "#000000",
+        "secondary": "#333333",
+        "disabled": "#999999",
+        "link": "#0066CC"
+    },
+    "accent": {
+        "primary": "#0078D7",
+        "secondary": "#2E8631",
+        "warning": "#FF8C00",
+        "error": "#CC0000"
+    },
+    "signal": {
+        "ch1": "#CC0000",
+        "ch2": "#00CC00",
+        "ch3": "#0000CC",
+        "ch4": "#CCCC00",
+        "reference": "#CC00CC"
+    },
+    "grid": {
+        "major": "#BBBBBB",
+        "minor": "#DDDDDD"
+    },
+    "selection": {
+        "background": "#ADD6FF",
+        "border": "#0078D7"
+    },
+    "border": {
+        "active": "#0078D7",
+        "inactive": "#CCCCCC"
+    }
+}

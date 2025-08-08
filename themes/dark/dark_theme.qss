@@ -1,0 +1,343 @@
+/* Dark Theme QSS for PySignalDecipher */
+
+/* Global Styles */
+QWidget {
+    background-color: #1E1E1E;
+    color: #E8E8E8;
+    font-size: 14px;
+}
+
+/* QMainWindow */
+QMainWindow {
+    background-color: #1E1E1E;
+}
+
+QMainWindow::separator {
+    background-color: #252526;
+    width: 1px;
+    height: 1px;
+}
+
+/* QTabWidget */
+QTabWidget::pane {
+    background-color: #252526;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+}
+
+QTabBar::tab {
+    background-color: #252526;
+    color: #CCCCCC;
+    border: 1px solid #3C3C3C;
+    padding: 8px 12px;
+}
+
+QTabBar::tab:hover {
+    background-color: #2D2D30;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+}
+
+QTabBar::tab:selected {
+    background-color: #3F3F3F;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+}
+
+/* QMenuBar */
+QMenuBar {
+    background-color: #252526;
+    color: #E8E8E8;
+}
+
+QMenuBar::item {
+    background-color: transparent;
+    padding: 4px 8px;
+}
+
+QMenuBar::item:selected {
+    background-color: #3F3F3F;
+    color: #E8E8E8;
+}
+
+/* QMenu */
+QMenu {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+}
+
+QMenu::item {
+    background-color: transparent;
+    padding: 4px 20px 4px 24px;
+}
+
+QMenu::item:selected {
+    background-color: #3F3F3F;
+    color: #E8E8E8;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #3C3C3C;
+    margin: 4px 8px;
+}
+
+/* QStatusBar */
+QStatusBar {
+    background-color: #252526;
+    color: #CCCCCC;
+    border-top: 1px solid #3C3C3C;
+}
+
+QStatusBar::item {
+    border: none;
+}
+
+/* QPushButton - Default */
+QPushButton {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    padding: 6px 12px;
+    min-width: 80px;
+}
+
+QPushButton:hover {
+    background-color: #3F3F3F;
+    color: #E8E8E8;
+    border: 1px solid #007ACC;
+}
+
+QPushButton:pressed {
+    background-color: #007ACC;
+    color: #E8E8E8;
+    border: 1px solid #007ACC;
+}
+
+QPushButton:disabled {
+    background-color: #252526;
+    color: #888888;
+    border: 1px solid #3C3C3C;
+}
+
+/* Green Buttons */
+QPushButton.green {
+    background-color: #252526;
+    color: #3F9142;
+    border: 2px solid #3F9142;
+}
+
+QPushButton.green:hover {
+    background-color: #2D2D30;
+    color: #4BB151;
+    border: 2px solid #4BB151;
+}
+
+QPushButton.green:pressed {
+    background-color: #3F9142;
+    color: #E8E8E8;
+    border: 2px solid #3F9142;
+}
+
+/* Red Buttons */
+QPushButton.red {
+    background-color: #252526;
+    color: #E51400;
+    border: 2px solid #E51400;
+}
+
+QPushButton.red:hover {
+    background-color: #2D2D30;
+    color: #FF1700;
+    border: 2px solid #FF1700;
+}
+
+QPushButton.red:pressed {
+    background-color: #E51400;
+    color: #E8E8E8;
+    border: 2px solid #E51400;
+}
+
+/* QLineEdit */
+QLineEdit {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    padding: 4px;
+}
+
+QLineEdit:focus {
+    border: 1px solid #007ACC;
+}
+
+/* QComboBox */
+QComboBox {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    padding: 4px 8px;
+    min-width: 6em;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #3C3C3C;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+    selection-background-color: #3F3F3F;
+}
+
+/* QGroupBox */
+QGroupBox {
+    background-color: #252526;
+    color: #E8E8E8;
+    border: 1px solid #3C3C3C;
+    border-radius: 4px;
+    margin-top: 1ex;
+    padding-top: 10px;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 5px;
+    color: #E8E8E8;
+}
+
+/* QLabel */
+QLabel {
+    background-color: transparent;
+    color: #E8E8E8;
+}
+
+/* QDockWidget - Modified section for dock widgets */
+QDockWidget {
+    color: #E8E8E8;
+    border: none; /* No border on the dock widget itself */
+}
+
+/* Title area styling */
+QDockWidget::title {
+    background-color: #2D2D30;
+    color: #E8E8E8;
+    padding: 6px;
+    border-bottom: 1px solid #3C3C3C;
+    text-align: left;
+}
+
+/* Style container frame */
+QFrame#dockStyleContainer {
+    border: 1px solid #3C3C3C;
+    background-color: #1E1E1E;
+}
+
+/* Active dock styling */
+QDockWidget[active="true"] QFrame#dockStyleContainer {
+    border: 2px solid #3F9142;
+}
+
+/* Color options for dock widgets */
+QDockWidget[color-option="blue"] QFrame#dockStyleContainer {
+    background-color: #1E3A5F;
+}
+
+QDockWidget[color-option="green"] QFrame#dockStyleContainer {
+    background-color: #1E3B2F;
+}
+
+QDockWidget[color-option="red"] QFrame#dockStyleContainer {
+    background-color: #3B1E1E;
+}
+
+QDockWidget[color-option="neutral"] QFrame#dockStyleContainer {
+    background-color: #2A2A2A;
+}
+
+/* Ensure active border is visible for all color options */
+QDockWidget[active="true"][color-option="blue"] QFrame#dockStyleContainer {
+    border: 2px solid #3F9142;
+}
+
+QDockWidget[active="true"][color-option="green"] QFrame#dockStyleContainer {
+    border: 2px solid #3F9142;
+}
+
+QDockWidget[active="true"][color-option="red"] QFrame#dockStyleContainer {
+    border: 2px solid #3F9142;
+}
+
+QDockWidget[active="true"][color-option="neutral"] QFrame#dockStyleContainer {
+    border: 2px solid #3F9142;
+}
+
+QDockWidget::close-button, QDockWidget::float-button {
+    border: none;
+    background: transparent;
+    padding: 0px;
+}
+
+QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+    background: #3F3F3F;
+    border-radius: 2px;
+}
+
+QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
+    background: #007ACC;
+}
+
+/* Ensure specific widgets like labels are also transparent */
+QFrame#dockStyleContainer QLabel, 
+QFrame#dockStyleContainer QGroupBox,
+QFrame#dockStyleContainer QScrollArea,
+QFrame#dockStyleContainer QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+/* Splitter styling */
+QSplitter::handle {
+    background-color: #3C3C3C;
+}
+
+QSplitter::handle:horizontal {
+    width: 4px;
+}
+
+QSplitter::handle:vertical {
+    height: 4px;
+}
+
+QSplitter::handle:hover {
+    background-color: #007ACC;
+}
+
+/* Main dock area styling */
+QMainWindow::separator:hover {
+    background-color: #007ACC;
+}
+
+/* For tabbed docks */
+QTabBar::tab:top:selected {
+    border-top: 2px solid #007ACC;
+}
+
+QTabBar::tab:bottom:selected {
+    border-bottom: 2px solid #007ACC;
+}
+
+QTabBar::tab:left:selected {
+    border-left: 2px solid #007ACC;
+}
+
+QTabBar::tab:right:selected {
+    border-right: 2px solid #007ACC;
+}
