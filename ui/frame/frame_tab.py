@@ -142,9 +142,7 @@ class FrameTab(QWidget):
         pm_group.setLayout(pm_layout)
         
         # PM auto checkbox
-        self.pm_auto_check = ThemedCheckBox("Auto-position")
-        self.pm_auto_check.setChecked(False)
-        self.pm_auto_check.stateChanged.connect(self.on_auto_state_changed)
+        self.pm_auto_check = SimpleDollarCheckBox("pm_auto", "Auto-position", self)
         pm_layout.addWidget(self.pm_auto_check)
         
         # PM position inputs
@@ -221,9 +219,7 @@ class FrameTab(QWidget):
         
         # Auto checkbox and position
         lock_auto_layout = QHBoxLayout()
-        self.lock_auto_check = ThemedCheckBox("Auto")
-        self.lock_auto_check.setChecked(True)
-        self.lock_auto_check.stateChanged.connect(self.on_auto_state_changed)
+        self.lock_auto_check = SimpleDollarCheckBox("lock_auto", "Auto", self)
         lock_auto_layout.addWidget(self.lock_auto_check)
         
         lock_auto_layout.addWidget(ThemedLabel("Position:"))
@@ -238,9 +234,7 @@ class FrameTab(QWidget):
         
         # Lock Y offset with auto checkbox
         lock_y_offset_layout = QHBoxLayout()
-        self.lock_y_auto_check = ThemedCheckBox("Auto")
-        self.lock_y_auto_check.setChecked(True)
-        self.lock_y_auto_check.stateChanged.connect(self.on_auto_state_changed)
+        self.lock_y_auto_check = SimpleDollarCheckBox("lock_y_auto", "Auto", self)
         lock_y_offset_layout.addWidget(self.lock_y_auto_check)
         
         lock_y_offset_layout.addWidget(ThemedLabel("Y Offset:"))
@@ -268,9 +262,7 @@ class FrameTab(QWidget):
         hinge_layout.addLayout(count_layout)
         
         # Auto checkbox for positions
-        self.hinge_auto_check = ThemedCheckBox("Auto-position")
-        self.hinge_auto_check.setChecked(True)
-        self.hinge_auto_check.stateChanged.connect(self.on_auto_state_changed)
+        self.hinge_auto_check = SimpleDollarCheckBox("hinge_auto", "Auto-position", self)
         hinge_layout.addWidget(self.hinge_auto_check)
         
         # Hinge positions container
@@ -281,9 +273,7 @@ class FrameTab(QWidget):
         
         # Y offset for all hinges with auto checkbox
         y_offset_layout = QHBoxLayout()
-        self.hinge_y_auto_check = ThemedCheckBox("Auto")
-        self.hinge_y_auto_check.setChecked(True)
-        self.hinge_y_auto_check.stateChanged.connect(self.on_auto_state_changed)
+        self.hinge_y_auto_check = SimpleDollarCheckBox("hinge_y_auto", "Auto", self)
         y_offset_layout.addWidget(self.hinge_y_auto_check)
         
         y_offset_layout.addWidget(ThemedLabel("Y Offset (all):"))
@@ -327,6 +317,9 @@ class FrameTab(QWidget):
         
         # Connect height input for min/max enforcement
         self.height_input.editingFinished.connect(self.enforce_height_limits)
+        
+        # Note: Auto checkbox signals are handled automatically by SimpleDollarCheckBox
+        # which will trigger variable_updated events that call run_auto_calculations
     
     def setup_initial_values(self):
         """Setup initial values and hinge count"""
@@ -344,7 +337,7 @@ class FrameTab(QWidget):
     def run_auto_calculations(self):
         """Unified auto-calculation system - runs in correct order"""
         # Prevent recursion
-        if self._auto_calculation_running:
+        if self._auto_calculation_running or not self.main_window:
             return
         
         self._auto_calculation_running = True
@@ -352,48 +345,55 @@ class FrameTab(QWidget):
             # Collect all changes to apply in batch
             changes = {}
             
+            # Get auto states from dollar variables
+            lock_auto = bool(self.main_window.get_dollar_variable("lock_auto"))
+            lock_y_auto = bool(self.main_window.get_dollar_variable("lock_y_auto"))
+            hinge_auto = bool(self.main_window.get_dollar_variable("hinge_auto"))
+            hinge_y_auto = bool(self.main_window.get_dollar_variable("hinge_y_auto"))
+            pm_auto = bool(self.main_window.get_dollar_variable("pm_auto"))
+            
             # 1. Lock Auto-Calculation
-            if self.lock_auto_check.isChecked():
+            if lock_auto:
                 lock_pos = self._calculate_lock_position()
                 if lock_pos is not None:
                     changes["lock_position"] = round(lock_pos, 1)
             
             # 2. Lock Y Offset Auto-Calculation
-            if self.lock_y_auto_check.isChecked():
+            if lock_y_auto:
                 lock_y_offset = self._calculate_lock_y_offset()
                 if lock_y_offset is not None:
                     changes["lock_y_offset"] = round(lock_y_offset, 1)
             
             # 3. Hinge Auto-Calculation
-            if self.hinge_auto_check.isChecked():
+            if hinge_auto:
                 hinge_positions = self._calculate_hinge_positions()
                 for i, pos in enumerate(hinge_positions):
                     if i < 4:  # Maximum 4 hinges
                         changes[f"hinge{i+1}_position"] = round(pos, 1)
             
             # 4. Hinge Y Offset Auto-Calculation
-            if self.hinge_y_auto_check.isChecked():
+            if hinge_y_auto:
                 hinge_y_offset = self._calculate_hinge_y_offset()
                 if hinge_y_offset is not None:
                     changes["hinge_y_offset"] = round(hinge_y_offset, 1)
             
             # 5. PM Auto-Calculation
-            if self.pm_auto_check.isChecked():
+            if pm_auto:
                 pm_positions = self._calculate_pm_positions()
                 for i, pos in enumerate(pm_positions):
                     if i < 4:  # Maximum 4 PMs
                         changes[f"pm{i+1}_position"] = round(pos, 1)
             
             # Apply all changes at once to main_window
-            if changes and self.main_window:
+            if changes:
                 self.main_window.update_dollar_variables(changes)
             
         finally:
             self._auto_calculation_running = False
     
     def _calculate_lock_position(self):
-        """Calculate lock position: just 1050"""
-        return 1050
+        """Calculate lock position: just 1058"""
+        return 1058
     
     def _calculate_lock_y_offset(self):
         """Calculate lock y offset based on frame width and door width"""
@@ -658,17 +658,20 @@ class FrameTab(QWidget):
     
     def on_auto_state_changed(self):
         """Handle auto checkbox state changes"""
-        # Update enabled states
+        # Since we're using SimpleDollarCheckBox, the change will automatically
+        # trigger a variables_updated event which will call run_auto_calculations
+        # We just need to update enabled states immediately for responsiveness
         self.update_enabled_states()
-        
-        # Run auto-calculations
-        self.run_auto_calculations()
     
     def on_variable_changed(self, var_name, value):
         """Handle variable changes from simple dollar widgets"""
         if self.main_window and not self._auto_calculation_running:
             # Apply single change to main_window
             self.main_window.update_dollar_variable(var_name, value)
+            
+            # If this was an auto checkbox change, update enabled states immediately
+            if var_name in ["pm_auto", "lock_auto", "lock_y_auto", "hinge_auto", "hinge_y_auto"]:
+                self.update_enabled_states()
     
     def on_order_changed(self, order):
         """Handle execution order changes"""
@@ -743,22 +746,30 @@ class FrameTab(QWidget):
     
     def update_enabled_states(self):
         """Update enabled/disabled states based on auto checkboxes"""
+        if not self.main_window:
+            return
+        
+        # Get auto states from dollar variables
+        lock_auto = bool(self.main_window.get_dollar_variable("lock_auto"))
+        lock_y_auto = bool(self.main_window.get_dollar_variable("lock_y_auto"))
+        hinge_auto = bool(self.main_window.get_dollar_variable("hinge_auto"))
+        hinge_y_auto = bool(self.main_window.get_dollar_variable("hinge_y_auto"))
+        pm_auto = bool(self.main_window.get_dollar_variable("pm_auto"))
+        
         # Lock position input
-        self.lock_position_input.setEnabled(not self.lock_auto_check.isChecked())
+        self.lock_position_input.setEnabled(not lock_auto)
         
         # Lock y offset input
-        self.lock_y_offset_input.setEnabled(not self.lock_y_auto_check.isChecked())
+        self.lock_y_offset_input.setEnabled(not lock_y_auto)
         
         # Hinge position inputs
-        hinge_auto = self.hinge_auto_check.isChecked()
         for input_field in getattr(self, 'hinge_inputs', []):
             input_field.setEnabled(not hinge_auto)
         
         # Hinge y offset input
-        self.hinge_z_offset_input.setEnabled(not self.hinge_y_auto_check.isChecked())
+        self.hinge_z_offset_input.setEnabled(not hinge_y_auto)
         
         # PM position inputs (first PM always enabled, others depend on auto state)
-        pm_auto = self.pm_auto_check.isChecked()
         for i, input_field in enumerate(self.pm_inputs):
             if i == 0:  # PM1 always editable
                 input_field.setEnabled(True)
@@ -794,8 +805,14 @@ class FrameTab(QWidget):
                       self.hinge_z_offset_input] + self.pm_inputs:
             widget.update_from_main_window()
         
-        # Update checkboxes
+        # Update checkboxes (both active and auto checkboxes)
         self.lock_active_check.update_from_main_window()
+        self.pm_auto_check.update_from_main_window()
+        self.lock_auto_check.update_from_main_window()
+        self.lock_y_auto_check.update_from_main_window()
+        self.hinge_auto_check.update_from_main_window()
+        self.hinge_y_auto_check.update_from_main_window()
+        
         for check in getattr(self, 'hinge_active_checks', []):
             check.update_from_main_window()
         

@@ -91,6 +91,13 @@ class MainWindow(QMainWindow):
             "pm3_position": 1230,
             "pm4_position": 1540,
             
+            # Auto calculation states
+            "pm_auto": 0,  # PM auto-positioning
+            "lock_auto": 1,  # Lock auto-positioning
+            "lock_y_auto": 0,  # Lock Y offset auto-calculation
+            "hinge_auto": 1,  # Hinge auto-positioning
+            "hinge_y_auto": 0,  # Hinge Y offset auto-calculation
+            
             # Lock configuration
             "lock_position": 1050,
             "lock_y_offset": 0,
