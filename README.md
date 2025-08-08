@@ -51,7 +51,7 @@ A PySide6 application for generating CNC G-code files for door frame manufacturi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/....
+git clone https://github.com/maro7tigre/cnc_frames_milling
 cd cnc-frame-wizard
 ```
 
