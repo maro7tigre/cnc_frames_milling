@@ -252,13 +252,28 @@ class MainWindow(QMainWindow):
         
         # Auto-save current profile set
         self.save_profile_set(current=True)
-        print("Profiles updated - gcodes re-extracted, processed and saved")
     
     def on_variables_updated(self):
         """Handle variables updated event - triggered when $variables change"""
-        # Reprocess gcodes with new variables
+        
+        # Check if selected profiles changed and re-extract their gcodes
+        selected_hinge = self.dollar_variables.get("selected_hinge")
+        selected_lock = self.dollar_variables.get("selected_lock")
+        
+        # Re-extract hinge gcode if hinge selection exists
+        if selected_hinge:
+            hinge_gcode = self.get_hinge_profile_gcode(selected_hinge)
+            if self.current_gcodes["hinge_gcode"] != hinge_gcode:
+                self.current_gcodes["hinge_gcode"] = hinge_gcode
+        
+        # Re-extract lock gcode if lock selection exists  
+        if selected_lock:
+            lock_gcode = self.get_lock_profile_gcode(selected_lock)
+            if self.current_gcodes["lock_gcode"] != lock_gcode:
+                self.current_gcodes["lock_gcode"] = lock_gcode
+        
+        # Always reprocess gcodes with current variables
         self.process_gcodes()
-        print("Variables updated - gcodes reprocessed")
     
     def on_generated_updated(self):
         """Handle generated updated event - triggered when generated gcodes change"""
@@ -588,7 +603,6 @@ class MainWindow(QMainWindow):
                     # Pattern matches both {L1} and {L1:any_default_value}
                     pattern = rf'\{{{re.escape(var_name)}(?::[^}}]+)?\}}'
                     result = re.sub(pattern, str(value), result)
-                    print(f"Replaced L variable {var_name} with {value}")
         
         # Replace custom variables - handle both {var} and {var:default} formats
         if custom_variables:
@@ -597,7 +611,6 @@ class MainWindow(QMainWindow):
                     # Pattern matches both {var_name} and {var_name:any_default_value}
                     pattern = rf'\{{{re.escape(var_name)}(?::[^}}]+)?\}}'
                     result = re.sub(pattern, str(value), result)
-                    print(f"Replaced custom variable '{var_name}' with {value}")
     
         return result
     
