@@ -2,9 +2,10 @@
 Profile Editor Dialog
 
 Profile editor with proper scaling type preview that maintains aspect ratio.
+Now with relative path support for images within the profiles directory.
 """
 
-from PySide6.QtWidgets import QDialog, QWidget, QHBoxLayout, QVBoxLayout, QDialogButtonBox, QMessageBox
+from PySide6.QtWidgets import QDialog, QWidget, QHBoxLayout, QVBoxLayout, QDialogButtonBox, QMessageBox, QFileDialog
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 import os
@@ -30,6 +31,10 @@ class ProfileEditor(QDialog):
         self.profile_image_path = profile_data.get("image") if profile_data else None
         self.is_editing = bool(profile_data)
         self.original_name = profile_data.get("name") if profile_data else None
+        
+        # Setup profiles images directory
+        self.profiles_images_dir = os.path.join("profiles", "images")
+        os.makedirs(self.profiles_images_dir, exist_ok=True)
         
         # MARK: - UI Setup
         self.setup_ui()
@@ -314,14 +319,10 @@ class ProfileEditor(QDialog):
             self.type_selector.dollar_variables_info = dollar_vars
     
     def select_profile_image(self):
-        """Select profile image"""
-        from PySide6.QtWidgets import QFileDialog
-        
-        default_dir = os.path.join("profiles", "images")
-        os.makedirs(default_dir, exist_ok=True)
-        
+        """Select profile image with profiles/images as default directory"""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Select Profile Image", default_dir, "Images (*.png *.jpg *.jpeg *.bmp)"
+            self, "Select Profile Image", self.profiles_images_dir,
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff);;All Files (*)"
         )
         if filename:
             self.profile_image_path = filename

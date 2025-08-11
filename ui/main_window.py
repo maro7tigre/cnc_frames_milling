@@ -230,6 +230,91 @@ class MainWindow(QMainWindow):
         self.save_app_config()
         event.accept()
     
+    # MARK: - Path Conversion Helpers
+    
+    def _path_to_relative(self, path):
+        """Convert absolute path to relative path if within profiles directory"""
+        if not path:
+            return path
+        
+        try:
+            # Convert to absolute path first in case it's already relative
+            abs_path = os.path.abspath(path)
+            profiles_abs = os.path.abspath(self.profiles_dir)
+            
+            # Check if the path is within the profiles directory
+            if abs_path.startswith(profiles_abs + os.sep) or abs_path == profiles_abs:
+                # Get relative path from profiles directory
+                rel_path = os.path.relpath(abs_path, profiles_abs)
+                # Return with ./ prefix to clearly indicate it's relative
+                return "./" + rel_path.replace("\\", "/")  # Use forward slashes for cross-platform compatibility
+            else:
+                # Path is outside profiles directory, keep as absolute
+                return abs_path
+                
+        except (ValueError, OSError):
+            # If any error occurs, return original path
+            return path
+    
+    def _path_to_absolute(self, path):
+        """Convert relative path to absolute path if it starts with ./"""
+        if not path:
+            return path
+        
+        try:
+            # Check if it's a relative path (starts with ./)
+            if path.startswith("./"):
+                # Remove ./ prefix and convert back slashes to forward slashes
+                rel_path = path[2:].replace("/", os.sep)
+                # Join with profiles directory to get absolute path
+                abs_path = os.path.join(self.profiles_dir, rel_path)
+                return os.path.abspath(abs_path)
+            else:
+                # Already absolute path or other format, return as-is
+                return path
+                
+        except (ValueError, OSError):
+            # If any error occurs, return original path
+            return path
+    
+    def _convert_data_paths_to_relative(self, data):
+        """Recursively convert image paths to relative in data structure"""
+        if isinstance(data, dict):
+            result = {}
+            for key, value in data.items():
+                if key in ['image', 'preview'] and isinstance(value, str):
+                    # Convert image/preview paths to relative
+                    result[key] = self._path_to_relative(value)
+                elif isinstance(value, (dict, list)):
+                    # Recursively process nested structures
+                    result[key] = self._convert_data_paths_to_relative(value)
+                else:
+                    result[key] = value
+            return result
+        elif isinstance(data, list):
+            return [self._convert_data_paths_to_relative(item) for item in data]
+        else:
+            return data
+    
+    def _convert_data_paths_to_absolute(self, data):
+        """Recursively convert relative paths to absolute in data structure"""
+        if isinstance(data, dict):
+            result = {}
+            for key, value in data.items():
+                if key in ['image', 'preview'] and isinstance(value, str):
+                    # Convert image/preview paths to absolute
+                    result[key] = self._path_to_absolute(value)
+                elif isinstance(value, (dict, list)):
+                    # Recursively process nested structures
+                    result[key] = self._convert_data_paths_to_absolute(value)
+                else:
+                    result[key] = value
+            return result
+        elif isinstance(data, list):
+            return [self._convert_data_paths_to_absolute(item) for item in data]
+        else:
+            return data
+    
     # MARK: - Event Handlers (The 3 main update types)
     
     def on_profiles_updated(self):
@@ -373,7 +458,7 @@ class MainWindow(QMainWindow):
     # MARK: - Profile Set
     
     def save_profile_set(self, current: bool = False):
-        """Save current profile set"""
+        """Save current profile set with relative path support"""
         if current:
             filename = self.current_file
         else:
@@ -388,6 +473,7 @@ class MainWindow(QMainWindow):
             try:
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
                 
+                # Create data with original paths
                 data = {
                     "hinges": {
                         "types": self.hinges_types,
@@ -403,6 +489,9 @@ class MainWindow(QMainWindow):
                     }
                 }
                 
+                # Convert paths to relative for portability
+                data = self._convert_data_paths_to_relative(data)
+                
                 with open(filename, 'w') as f:
                     json.dump(data, f, indent=2)
                 
@@ -415,7 +504,7 @@ class MainWindow(QMainWindow):
         return False
     
     def load_profile_set(self, current: bool = False):
-        """Load profile set"""
+        """Load profile set with relative path support"""
         if current:
             filename = self.current_file
             if not os.path.exists(filename):
@@ -431,6 +520,9 @@ class MainWindow(QMainWindow):
             try:
                 with open(filename, 'r') as f:
                     data = json.load(f)
+                
+                # Convert relative paths back to absolute paths
+                data = self._convert_data_paths_to_absolute(data)
                 
                 # Load types and profiles
                 if "hinges" in data:

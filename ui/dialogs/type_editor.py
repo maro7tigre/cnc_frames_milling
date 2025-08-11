@@ -2,6 +2,7 @@
 Type Editor Dialog
 
 Type editor that calls main_window methods directly with clear UI/functionality separation.
+Now with relative path support for images within the profiles directory.
 """
 
 from PySide6.QtWidgets import QDialog, QWidget, QHBoxLayout, QVBoxLayout, QFileDialog, QMessageBox, QDialogButtonBox
@@ -28,6 +29,10 @@ class TypeEditor(QDialog):
         self.preview_path = type_data.get("preview") if type_data else None
         self.is_editing = bool(type_data)
         self.original_name = type_data.get("name") if type_data else None
+        
+        # Setup profiles images directory
+        self.profiles_images_dir = os.path.join("profiles", "images")
+        os.makedirs(self.profiles_images_dir, exist_ok=True)
         
         # MARK: - UI Setup
         self.setup_ui()
@@ -207,12 +212,10 @@ class TypeEditor(QDialog):
             var_names = [f"{{{name}{':' + default if default else ''}}}" for name, default in variables]
     
     def select_image(self):
-        """Select type image"""
-        default_dir = os.path.join("profiles", "images")
-        os.makedirs(default_dir, exist_ok=True)
-        
+        """Select type image with profiles/images as default directory"""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Select Image", default_dir, "Images (*.png *.jpg *.jpeg *.bmp)"
+            self, "Select Type Image", self.profiles_images_dir, 
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff);;All Files (*)"
         )
         if filename:
             self.image_path = filename
@@ -220,12 +223,10 @@ class TypeEditor(QDialog):
             self.image_label.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio))
     
     def select_preview(self):
-        """Select preview image"""
-        default_dir = os.path.join("profiles", "images")
-        os.makedirs(default_dir, exist_ok=True)
-        
+        """Select preview image with profiles/images as default directory"""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Select Preview Image", default_dir, "Images (*.png *.jpg *.jpeg *.bmp)"
+            self, "Select Preview Image", self.profiles_images_dir,
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.tiff);;All Files (*)"
         )
         if filename:
             self.preview_path = filename
@@ -235,11 +236,11 @@ class TypeEditor(QDialog):
     def upload_gcode(self):
         """Upload G-code from file"""
         filename, _ = QFileDialog.getOpenFileName(
-            self, "Upload G-Code", "", "G-Code Files (*.gcode *.nc *.txt)"
+            self, "Upload G-Code", "", "G-Code Files (*.gcode *.nc *.txt);;All Files (*)"
         )
         if filename:
             try:
-                with open(filename, 'r') as f:
+                with open(filename, 'r', encoding='utf-8') as f:
                     self.gcode_edit.setPlainText(f.read())
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to load file: {str(e)}")
@@ -247,11 +248,11 @@ class TypeEditor(QDialog):
     def save_gcode(self):
         """Save G-code to file"""
         filename, _ = QFileDialog.getSaveFileName(
-            self, "Save G-Code", "", "G-Code Files (*.gcode)"
+            self, "Save G-Code", "", "G-Code Files (*.gcode);;Text Files (*.txt);;All Files (*)"
         )
         if filename:
             try:
-                with open(filename, 'w') as f:
+                with open(filename, 'w', encoding='utf-8') as f:
                     f.write(self.gcode_edit.toPlainText())
                 QMessageBox.information(self, "Success", "G-code saved successfully!")
             except Exception as e:
