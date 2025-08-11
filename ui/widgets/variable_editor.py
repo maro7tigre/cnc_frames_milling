@@ -56,6 +56,15 @@ class VariableEditor(QWidget):
         scroll.setWidget(container)
         layout.addWidget(scroll, 1)
     
+    def _sort_l_variables(self, var_names):
+        """Sort L variables numerically (L1, L2, L3, L10, L23, L150)"""
+        def extract_number(var_name):
+            # Extract the number from L variable name (e.g., "L10" -> 10)
+            match = re.match(r'L(\d+)', var_name)
+            return int(match.group(1)) if match else 0
+        
+        return sorted(var_names, key=extract_number)
+    
     def update_variables(self, gcode):
         """Extract L variables from gcode and update UI"""
         # Clear existing
@@ -75,8 +84,8 @@ class VariableEditor(QWidget):
             if var_name not in unique_vars:
                 unique_vars[var_name] = default
         
-        # Create editors
-        for var_name in sorted(unique_vars.keys()):
+        # Create editors - FIXED: Sort numerically instead of alphabetically
+        for var_name in self._sort_l_variables(unique_vars.keys()):
             default = unique_vars[var_name]
             
             # Variable widget
