@@ -105,21 +105,30 @@ class ProfileEditor(QDialog):
         return content_widget
     
     def create_variables_section(self):
-        """Create variables section"""
+        """Create variables section with resizable splitter for equal height distribution"""
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
+        
+        # Create vertical splitter for variables and custom editors
+        variables_splitter = ThemedSplitter(Qt.Vertical)
+        left_layout.addWidget(variables_splitter, 1)  # Give splitter all available space
         
         # Variables editor
         self.variable_editor = VariableEditor()
         self.variable_editor.setVisible(False)
-        left_layout.addWidget(self.variable_editor)
+        variables_splitter.addWidget(self.variable_editor)
         
         # Custom editor
         self.custom_editor = CustomEditor()
         self.custom_editor.setVisible(False)
-        left_layout.addWidget(self.custom_editor)
+        variables_splitter.addWidget(self.custom_editor)
         
-        left_layout.addStretch()
+        # Set equal sizes by default (50% each)
+        variables_splitter.setSizes([400, 400])  # Equal distribution
+        
+        # Optional: Set stretch factors to ensure equal growth/shrinking
+        variables_splitter.setStretchFactor(0, 1)  # Variable editor gets equal stretch
+        variables_splitter.setStretchFactor(1, 1)  # Custom editor gets equal stretch
         
         return left_widget
     
