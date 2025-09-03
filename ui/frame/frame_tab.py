@@ -240,7 +240,7 @@ class FrameTab(QWidget):
         
         lock_y_offset_layout.addWidget(ThemedLabel("Y Offset:"))
         self.lock_y_offset_input = SimpleDollarLineEdit("lock_y_offset", self)
-        self.lock_y_offset_input.setValidator(QDoubleValidator(-100, 100, 2))
+        self.lock_y_offset_input.setValidator(QDoubleValidator(-250, 250, 2))
         lock_y_offset_layout.addWidget(self.lock_y_offset_input)
         lock_layout.addLayout(lock_y_offset_layout)
         
@@ -278,9 +278,9 @@ class FrameTab(QWidget):
         y_offset_layout.addWidget(self.hinge_y_auto_check)
         
         y_offset_layout.addWidget(ThemedLabel("Y Offset (all):"))
-        self.hinge_z_offset_input = SimpleDollarLineEdit("hinge_y_offset", self)
-        self.hinge_z_offset_input.setValidator(QDoubleValidator(-100, 100, 2))
-        y_offset_layout.addWidget(self.hinge_z_offset_input)
+        self.hinge_y_offset_input = SimpleDollarLineEdit("hinge_y_offset", self)
+        self.hinge_y_offset_input.setValidator(QDoubleValidator(-250, 250, 2))
+        y_offset_layout.addWidget(self.hinge_y_offset_input)
         hinge_layout.addLayout(y_offset_layout)
         
         layout.addWidget(hinge_group)
@@ -768,7 +768,7 @@ class FrameTab(QWidget):
             input_field.setEnabled(not hinge_auto)
         
         # Hinge y offset input
-        self.hinge_z_offset_input.setEnabled(not hinge_y_auto)
+        self.hinge_y_offset_input.setEnabled(not hinge_y_auto)
         
         # PM position inputs (first PM always enabled, others depend on auto state)
         for i, input_field in enumerate(self.pm_inputs):
@@ -803,7 +803,7 @@ class FrameTab(QWidget):
         # Update all simple dollar widgets
         for widget in [self.height_input, self.width_input, self.door_width_input, self.x_offset_input, self.y_offset_input, 
                       self.z_offset_input, self.lock_position_input, self.lock_y_offset_input,
-                      self.hinge_z_offset_input] + self.pm_inputs:
+                      self.hinge_y_offset_input] + self.pm_inputs:
             widget.update_from_main_window()
         
         # Update checkboxes (both active and auto checkboxes)
