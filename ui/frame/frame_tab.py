@@ -333,6 +333,72 @@ class FrameTab(QWidget):
         # Run initial auto-calculations
         self.run_auto_calculations()
     
+    # MARK: - CRITICAL FIX: Widget Rebuilding for Project Loading
+    
+    def rebuild_hinge_widgets_from_variables(self):
+        """Rebuild hinge widgets based on current dollar variables - called during project loading"""
+        if not self.main_window:
+            return
+        
+        print("Rebuilding hinge widgets from loaded variables...")
+        
+        # Count active hinges from dollar variables
+        active_count = 0
+        for i in range(4):
+            if self.main_window.get_dollar_variable(f"hinge{i+1}_active"):
+                active_count = i + 1  # Set to the highest active hinge number
+        
+        # Update spinbox value WITHOUT triggering valueChanged signal
+        self.hinge_count_spin.blockSignals(True)
+        self.hinge_count_spin.setValue(active_count)
+        self.hinge_count_spin.blockSignals(False)
+        
+        # Rebuild hinge UI to match the loaded configuration
+        self.rebuild_hinge_inputs(active_count)
+        
+        # Update enabled states
+        self.update_enabled_states()
+        self.update_order_widget()
+        
+        print(f"Rebuilt hinge widgets for {active_count} hinges")
+    
+    def rebuild_hinge_inputs(self, count):
+        """Rebuild hinge position inputs to match the specified count"""
+        # Clear existing inputs
+        while self.hinge_positions_layout.count():
+            item = self.hinge_positions_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        
+        # Clear the arrays
+        self.hinge_inputs = []
+        self.hinge_active_checks = []
+        
+        # Create new inputs for the specified count
+        for i in range(count):
+            hinge_layout = QHBoxLayout()
+            
+            hinge_layout.addWidget(ThemedLabel(f"Hinge {i+1}:"))
+            
+            # Position input
+            position_input = SimpleDollarLineEdit(f"hinge{i+1}_position", self)
+            position_input.setValidator(QDoubleValidator(0, self.MAX_FRAME_HEIGHT, 2))
+            hinge_layout.addWidget(position_input)
+            self.hinge_inputs.append(position_input)
+            
+            # Active checkbox
+            active_check = SimpleDollarCheckBox(f"hinge{i+1}_active", "Active", self)
+            hinge_layout.addWidget(active_check)
+            self.hinge_active_checks.append(active_check)
+            
+            self.hinge_positions_layout.addLayout(hinge_layout)
+        
+        # Force update from main_window for all new widgets
+        for input_field in self.hinge_inputs:
+            input_field.update_from_main_window()
+        for check in self.hinge_active_checks:
+            check.update_from_main_window()
+    
     # MARK: - Auto-Calculation System (UNIFIED)
     
     def run_auto_calculations(self):

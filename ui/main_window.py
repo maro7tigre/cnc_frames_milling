@@ -606,12 +606,26 @@ class MainWindow(QMainWindow):
                 with open(filename, 'r') as f:
                     data = json.load(f)
 
-                # Load $variables and generated gcodes
+                # CRITICAL: Update variables WITHOUT triggering auto-calculations
                 if "dollar_variables" in data:
+                    # Temporarily disable auto-calculations in frame tab
+                    if hasattr(self.frame_tab, '_auto_calculation_running'):
+                        old_auto_calc = self.frame_tab._auto_calculation_running
+                        self.frame_tab._auto_calculation_running = True
+                    
+                    # Update dollar variables
                     self.dollar_variables.update(data["dollar_variables"])
+                    
+                    # Force frame tab to rebuild hinge UI based on loaded data
+                    self.frame_tab.rebuild_hinge_widgets_from_variables()
+                    
+                    # Re-enable auto-calculations
+                    if hasattr(self.frame_tab, '_auto_calculation_running'):
+                        self.frame_tab._auto_calculation_running = old_auto_calc
+                    
+                    # Now trigger the variable update events
                     self.events.emit_variables_updated()
                     self.update_tab_states()
-                    self.frame_tab.update_enabled_states()
                 
                 if "generated_gcodes" in data:
                     self.generated_gcodes = data["generated_gcodes"]
