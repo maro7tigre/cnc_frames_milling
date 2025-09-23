@@ -78,6 +78,7 @@ class MainWindow(QMainWindow):
             # Frame properties
             "frame_height": 2100,
             "frame_width": 45,
+            "frame_depth": 14,
             "door_width": 40,
             
             # Machine offsets

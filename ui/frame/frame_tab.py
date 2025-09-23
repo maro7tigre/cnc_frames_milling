@@ -117,6 +117,11 @@ class FrameTab(QWidget):
         self.width_input.setValidator(QDoubleValidator(10, 100, 2))
         frame_layout.addRow("Frame Width (mm):", self.width_input)
         
+        # Frame depth
+        self.depth_input = SimpleDollarLineEdit("frame_depth", self)
+        self.depth_input.setValidator(QDoubleValidator(10, 100, 2))
+        frame_layout.addRow("Frame Depth (mm):", self.depth_input)
+        
         # Door width
         self.door_width_input = SimpleDollarLineEdit("door_width", self)
         self.door_width_input.setValidator(QDoubleValidator(10, 100, 2))
@@ -867,7 +872,7 @@ class FrameTab(QWidget):
         dollar_vars = self.main_window.get_dollar_variable()
         
         # Update all simple dollar widgets
-        for widget in [self.height_input, self.width_input, self.door_width_input, self.x_offset_input, self.y_offset_input, 
+        for widget in [self.height_input, self.width_input, self.depth_input, self.door_width_input, self.x_offset_input, self.y_offset_input, 
                       self.z_offset_input, self.lock_position_input, self.lock_y_offset_input,
                       self.hinge_y_offset_input] + self.pm_inputs:
             widget.update_from_main_window()
