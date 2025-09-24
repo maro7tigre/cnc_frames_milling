@@ -126,6 +126,11 @@ class FrameTab(QWidget):
         self.door_width_input = SimpleDollarLineEdit("door_width", self)
         self.door_width_input.setValidator(QDoubleValidator(10, 100, 2))
         frame_layout.addRow("Door Width (mm):", self.door_width_input)
+
+        # Locker width (used for hinge offset calculations)
+        self.locker_width_input = SimpleDollarLineEdit("locker_width", self)
+        self.locker_width_input.setValidator(QDoubleValidator(5, 100, 2))
+        frame_layout.addRow("Locker Width (mm):", self.locker_width_input)
         
         # Machine offsets
         self.x_offset_input = SimpleDollarLineEdit("machine_x_offset", self)
@@ -485,18 +490,15 @@ class FrameTab(QWidget):
         return None
     
     def _calculate_hinge_y_offset(self):
-        """Calculate hinge y offset - same algorithm as lock for now"""
+        """Calculate hinge Y offset using: frame_width - 5 - (locker_width/2)"""
         try:
             if not self.main_window:
                 return None
             frame_width = self.main_window.get_dollar_variable("frame_width")
-            door_width = self.main_window.get_dollar_variable("door_width")
-            
-            if frame_width is not None and door_width is not None:
-                if door_width <= 45:
-                    return frame_width - door_width / 2
-                else:
-                    return frame_width - 45 / 2
+            locker_width = self.main_window.get_dollar_variable("locker_width")
+
+            if frame_width is not None and locker_width is not None:
+                return frame_width - 5 - (locker_width / 2)
         except (ValueError, TypeError):
             pass
         return None
@@ -872,9 +874,9 @@ class FrameTab(QWidget):
         dollar_vars = self.main_window.get_dollar_variable()
         
         # Update all simple dollar widgets
-        for widget in [self.height_input, self.width_input, self.depth_input, self.door_width_input, self.x_offset_input, self.y_offset_input, 
-                      self.z_offset_input, self.lock_position_input, self.lock_y_offset_input,
-                      self.hinge_y_offset_input] + self.pm_inputs:
+        for widget in [self.height_input, self.width_input, self.depth_input, self.door_width_input, self.locker_width_input, self.x_offset_input, self.y_offset_input, 
+                        self.z_offset_input, self.lock_position_input, self.lock_y_offset_input,
+                        self.hinge_y_offset_input] + self.pm_inputs:
             widget.update_from_main_window()
         
         # Update checkboxes (both active and auto checkboxes)

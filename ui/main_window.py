@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
             "frame_width": 45,
             "frame_depth": 14,
             "door_width": 40,
+            "locker_width": 22,
             
             # Machine offsets
             "machine_x_offset": 0,
