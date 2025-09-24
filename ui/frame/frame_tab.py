@@ -6,11 +6,12 @@ Clean architecture with predictable update flow and proper separation of concern
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDoubleValidator
+from PySide6.QtGui import QDoubleValidator, QPixmap
+import os
 
 from ..widgets.themed_widgets import (ThemedSplitter, ThemedLabel, ThemedRadioButton, 
                                     ThemedGroupBox, PurpleButton, GreenButton, ThemedCheckBox, ThemedSpinBox, ThemedLineEdit)
-from ..widgets.simple_widgets import ClickableLabel, ErrorLineEdit
+from ..widgets.simple_widgets import ClickableLabel, ErrorLineEdit, ScaledPreviewLabel
 from ..widgets.dollar_variable_widgets import (DollarVariableLineEdit, DollarVariableSpinBox, 
                                              DollarVariableCheckBox, DollarVariableRadioGroup)
 from .widgets.frame_preview import FramePreview
@@ -127,10 +128,10 @@ class FrameTab(QWidget):
         self.door_width_input.setValidator(QDoubleValidator(10, 100, 2))
         frame_layout.addRow("Door Width (mm):", self.door_width_input)
 
-        # Locker width (used for hinge offset calculations)
-        self.locker_width_input = SimpleDollarLineEdit("locker_width", self)
-        self.locker_width_input.setValidator(QDoubleValidator(5, 100, 2))
-        frame_layout.addRow("Locker Width (mm):", self.locker_width_input)
+        # Hinge width (used for hinge offset calculations)
+        self.hinge_width_input = SimpleDollarLineEdit("hinge_width", self)
+        self.hinge_width_input.setValidator(QDoubleValidator(5, 100, 2))
+        frame_layout.addRow("Hinge Width (mm):", self.hinge_width_input)
         
         # Machine offsets
         self.x_offset_input = SimpleDollarLineEdit("machine_x_offset", self)
@@ -169,6 +170,17 @@ class FrameTab(QWidget):
             self.pm_inputs.append(pm_input)
         
         layout.addWidget(pm_group)
+
+        # Parameter preview under PM positions
+        preview_group = ThemedGroupBox("Parameter Preview")
+        preview_layout = QVBoxLayout()
+        preview_group.setLayout(preview_layout)
+
+        self.param_preview = ScaledPreviewLabel()
+        self.param_preview.setText("No preview")
+        preview_layout.addWidget(self.param_preview)
+
+        layout.addWidget(preview_group)
         layout.addStretch()
         
         return widget
@@ -490,15 +502,15 @@ class FrameTab(QWidget):
         return None
     
     def _calculate_hinge_y_offset(self):
-        """Calculate hinge Y offset using: frame_width - 5 - (locker_width/2)"""
+        """Calculate hinge Y offset using: frame_width - 5 - (hinge_width/2)"""
         try:
             if not self.main_window:
                 return None
             frame_width = self.main_window.get_dollar_variable("frame_width")
-            locker_width = self.main_window.get_dollar_variable("locker_width")
+            hinge_width = self.main_window.get_dollar_variable("hinge_width")
 
-            if frame_width is not None and locker_width is not None:
-                return frame_width - 5 - (locker_width / 2)
+            if frame_width is not None and hinge_width is not None:
+                return frame_width - 5 - (hinge_width / 2)
         except (ValueError, TypeError):
             pass
         return None
@@ -746,6 +758,34 @@ class FrameTab(QWidget):
             # If this was an auto checkbox change, update enabled states immediately
             if var_name in ["pm_auto", "lock_auto", "lock_y_auto", "hinge_auto", "hinge_y_auto"]:
                 self.update_enabled_states()
+
+    # MARK: - Parameter Image Preview
+
+    def on_parameter_field_focused(self, variable_name: str):
+        """When a parameter input gets focus, try showing its preview image."""
+        # Determine project root from this file's location (two levels up from ui/frame)
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ))
+        images_dir = os.path.join(project_root, "parameter_images")
+
+        # Supported image extensions (QPixmap supports these well)
+        exts = [".png", ".jpg", ".jpeg"]
+        image_path = None
+
+        for ext in exts:
+            candidate = os.path.join(images_dir, f"{variable_name}{ext}")
+            if os.path.exists(candidate):
+                image_path = candidate
+                break
+
+        if image_path:
+            pix = QPixmap(image_path)
+            if not pix.isNull():
+                self.param_preview.setPixmap(pix)
+                return
+
+        # Fallback to placeholder text
+        if hasattr(self, 'param_preview') and self.param_preview is not None:
+            self.param_preview.setText("No preview")
     
     def on_order_changed(self, order):
         """Handle execution order changes"""
@@ -874,7 +914,7 @@ class FrameTab(QWidget):
         dollar_vars = self.main_window.get_dollar_variable()
         
         # Update all simple dollar widgets
-        for widget in [self.height_input, self.width_input, self.depth_input, self.door_width_input, self.locker_width_input, self.x_offset_input, self.y_offset_input, 
+        for widget in [self.height_input, self.width_input, self.depth_input, self.door_width_input, self.hinge_width_input, self.x_offset_input, self.y_offset_input, 
                         self.z_offset_input, self.lock_position_input, self.lock_y_offset_input,
                         self.hinge_y_offset_input] + self.pm_inputs:
             widget.update_from_main_window()
@@ -1074,6 +1114,12 @@ class SimpleDollarLineEdit(ThemedLineEdit):
         
         # Connect signal
         self.editingFinished.connect(self._on_editing_finished)
+
+    def focusInEvent(self, event):
+        """When focused, ask frame_tab to update the parameter preview for this variable."""
+        super().focusInEvent(event)
+        if hasattr(self.frame_tab, 'on_parameter_field_focused'):
+            self.frame_tab.on_parameter_field_focused(self.variable_name)
     
     def _format_value(self, value):
         """Format value for display"""

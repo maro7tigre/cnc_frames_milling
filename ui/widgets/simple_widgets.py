@@ -72,6 +72,7 @@ class ScaledPreviewLabel(QLabel):
         super().__init__(parent)
         self.setScaledContents(False)
         self.setAlignment(Qt.AlignCenter)
+        self.setWordWrap(True)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setMinimumSize(200, 200)  # Minimum reasonable size
         self._pixmap = None
@@ -131,23 +132,8 @@ class ScaledPreviewLabel(QLabel):
             # Let QLabel handle pixmap painting with proper scaling
             super().paintEvent(event)
         else:
-            # Draw background first
+            # Let QLabel handle background and placeholder text drawing once
             super().paintEvent(event)
-            
-            # Draw centered text if we have placeholder text
-            if self._placeholder_text:
-                painter = QPainter(self)
-                painter.setRenderHint(QPainter.Antialiasing)
-                painter.setFont(QFont("Arial", 11))
-                painter.setPen(QColor("#bdbdc0"))
-                
-                # Calculate text rectangle with some padding
-                rect = self.rect().adjusted(10, 10, -10, -10)
-                
-                # Draw text with word wrap and center alignment
-                painter.drawText(rect, Qt.AlignCenter | Qt.TextWordWrap, self._placeholder_text)
-                
-                painter.end()
     
     def clear(self):
         """Clear both pixmap and text"""
