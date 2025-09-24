@@ -4,7 +4,7 @@ Frame Tab
 Clean architecture with predictable update flow and proper separation of concerns.
 """
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup, QSizePolicy
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QDoubleValidator, QPixmap
 import os
@@ -173,15 +173,15 @@ class FrameTab(QWidget):
 
         # Parameter preview under PM positions
         preview_group = ThemedGroupBox("Parameter Preview")
+        preview_group.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         preview_layout = QVBoxLayout()
         preview_group.setLayout(preview_layout)
 
         self.param_preview = ScaledPreviewLabel()
         self.param_preview.setText("No preview")
-        preview_layout.addWidget(self.param_preview)
+        preview_layout.addWidget(self.param_preview, 1)
 
-        layout.addWidget(preview_group)
-        layout.addStretch()
+        layout.addWidget(preview_group, 1)
         
         return widget
     
