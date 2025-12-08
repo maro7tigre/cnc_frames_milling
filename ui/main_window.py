@@ -18,13 +18,15 @@ class EventManager(QObject):
     profiles_updated = Signal()  # Profile set, types, or profiles changed
     variables_updated = Signal()  # $variables changed
     generated_updated = Signal()  # Generated gcodes changed
+    processed_updated = Signal()  # Processed gcodes changed
     
     def __init__(self):
         super().__init__()
         self._subscribers = {
             'profiles': [],
             'variables': [],
-            'generated': []
+            'generated': [],
+            'processed': []
         }
     
     def subscribe(self, event_type: str, callback: Callable):
@@ -39,6 +41,8 @@ class EventManager(QObject):
                 self.variables_updated.connect(callback)
             elif event_type == 'generated':
                 self.generated_updated.connect(callback)
+            elif event_type == 'processed':
+                self.processed_updated.connect(callback)
     
     def emit_profiles_updated(self):
         """Emit profiles updated event"""
@@ -51,6 +55,10 @@ class EventManager(QObject):
     def emit_generated_updated(self):
         """Emit generated updated event"""
         self.generated_updated.emit()
+
+    def emit_processed_updated(self):
+        """Emit processed updated event"""
+        self.processed_updated.emit()
 
 
 class MainWindow(QMainWindow):
@@ -650,12 +658,16 @@ class MainWindow(QMainWindow):
     
     def process_gcodes(self):
         """Process current gcodes with $variables"""
-        for name, gcode in self.current_gcodes.items():
-            if gcode:
-                processed = self.replace_dollar_variables(gcode)
-                self.processed_gcodes[name] = processed
-            else:
-                self.processed_gcodes[name] = None
+        try:
+            for name, gcode in self.current_gcodes.items():
+                if gcode:
+                    processed = self.replace_dollar_variables(gcode)
+                    self.processed_gcodes[name] = processed
+                else:
+                    self.processed_gcodes[name] = None
+            self.events.emit_processed_updated()
+        except Exception as e:
+            print(f"Error processing gcodes: {e}")
                 
     def update_generated_gcode(self, name: str, gcode: str):
         """Update single generated gcode"""

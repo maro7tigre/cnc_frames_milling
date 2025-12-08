@@ -390,6 +390,7 @@ class FrameTab(QWidget):
         while self.hinge_positions_layout.count():
             item = self.hinge_positions_layout.takeAt(0)
             if item.widget():
+                item.widget().setParent(None)
                 item.widget().deleteLater()
         
         # Clear the arrays
@@ -811,6 +812,7 @@ class FrameTab(QWidget):
         while self.hinge_positions_layout.count():
             item = self.hinge_positions_layout.takeAt(0)
             if item.widget():
+                item.widget().setParent(None)
                 item.widget().deleteLater()
         
         self.hinge_inputs = []

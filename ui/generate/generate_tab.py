@@ -39,7 +39,7 @@ class GenerateTab(QWidget):
         # MARK: - Event Subscriptions
         if self.main_window:
             self.main_window.events.subscribe('profiles', self.on_profiles_updated)
-            self.main_window.events.subscribe('variables', self.on_variables_updated)
+            self.main_window.events.subscribe('processed', self.on_variables_updated)
             self.main_window.events.subscribe('generated', self.on_generated_updated)
     
     # MARK: - UI Setup
