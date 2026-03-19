@@ -30,11 +30,6 @@ A PySide6 application for generating CNC G-code files for door frame manufacturi
 - Export to organized file structure
 - Real-time syntax highlighting with error detection
 
-### 🎭 **Theming System** (unfinished)
-- Multiple color themes (Dark, Light, Purple)
-- Consistent UI styling across all components
-- Customizable color schemes via JSON configuration
-
 ### 💾 **Project Management**
 - Save/load complete projects
 - Profile set management for reusable configurations
@@ -71,11 +66,6 @@ source .venv/bin/activate
 pip install PySide6
 ```
 
-4. Run the application:
-```bash
-python main.py
-```
-
 ## Usage
 
 ### Quick Start
@@ -86,9 +76,10 @@ python main.py
    - Select active profiles for your project
 
 2. **Frame Setup Tab**
+   - Edit the right and left Gcode with references to the System variables.
    - Enter frame dimensions (height, width, door width)
    - Configure lock and hinge positions (manual or automatic)
-   - Set door orientation (left/right)
+   - Preview door orientation (left/right)
    - Adjust PM positions for optimal mounting
 
 3. **Generate Files Tab**
@@ -103,30 +94,6 @@ The application supports three types of variables:
 - **L Variables**: `{L1}`, `{L2:default_value}` - Profile-specific dimensions
 - **Custom Variables**: `{custom_name:default}` - User-defined parameters
 - **$ Variables**: `{$frame_height}`, `{$lock_position}` - System variables
-
-## Project Structure
-
-```
-cnc-frame-wizard/
-├── main.py                 # Application entry point
-├── theme_manager.py        # Theme management system
-├── ui/
-│   ├── main_window.py      # Main application window
-│   ├── profile/            # Profile management components
-│   ├── frame/              # Frame configuration components
-│   ├── generate/           # G-code generation components
-│   ├── dialogs/            # Dialog windows
-│   ├── widgets/            # Reusable UI widgets
-│   └── gcode_ide/          # G-code editor with syntax highlighting
-├── themes/                 # Theme configuration files
-│   ├── dark/              # Dark theme
-│   ├── light/             # Light theme
-│   └── purple/            # Purple theme (default)
-├── profiles/              # Profile storage
-│   ├── current.json       # Current configuration
-│   └── saved/             # Saved profile sets
-└── projects/              # Saved projects
-```
 
 ## Configuration
 
@@ -146,62 +113,9 @@ The application uses the following default directories:
 - Projects: `projects/`
 - Output: `~/CNC/Output/`
 
-## Contributing
-
-Contributions are welcome! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow PEP 8 conventions
-- Use meaningful variable and function names
-- Add docstrings to all classes and functions
-- Comment complex logic
-
-### Testing
-Before submitting a PR, ensure:
-- The application runs without errors
-- New features are properly integrated
-- UI elements follow the existing theme system
-
-## Known Issues
-
-- Preview visualization is currently a placeholder
-- 3D toolpath visualization not yet implemented
-- Limited to 4 hinges and 4 PM positions maximum
-
-## Roadmap
-
-- [ ] 3D toolpath visualization
-- [ ] Advanced collision detection
-- [ ] Multi-language support 
-- [ ] Highlight the selected L variable in the preview
-
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see below for details.
-
-```
-CNC Frame Wizard - CNC G-code generation for door frame manufacturing
-Copyright (C) 2024 [Your Name]
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
-```
+This project is licensed under the GNU General Public License v3.0
 
 ## Acknowledgments
 
