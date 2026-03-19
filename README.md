@@ -36,6 +36,11 @@ A PySide6 application for generating CNC G-code files for door frame manufacturi
 - Auto-save current configuration
 - Import/export profile libraries
 
+
+## Preview
+
+![CNC Frames Milling Preview](preview/cnc%20frames%20milling.gif)
+
 ## Installation
 
 ### Prerequisites
