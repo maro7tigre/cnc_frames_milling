@@ -362,9 +362,11 @@ class SpreadsheetPickerDialog(QDialog):
                 border: 1px solid #44475a;
                 gridline-color: #3a3c4e;
                 selection-background-color: #44475a;
+                alternate-background-color: #261808;
             }
-            QTableWidget::item { padding: 4px 6px; }
-            QTableWidget::item:selected { background-color: #44475a; }
+            QTableWidget::item { padding: 4px 6px; color: #ffffff; }
+            QTableWidget::item:alternate { background-color: #261808; color: #ffffff; }
+            QTableWidget::item:selected { background-color: #44475a; color: #ffffff; }
             QHeaderView::section {
                 background-color: #282a36;
                 color: #BB86FC;
