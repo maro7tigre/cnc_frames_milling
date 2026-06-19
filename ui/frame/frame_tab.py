@@ -4,18 +4,20 @@ Frame Tab
 Clean architecture with predictable update flow and proper separation of concerns.
 """
 
-from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup, QSizePolicy
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup, QSizePolicy, QFileDialog, QMessageBox
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QDoubleValidator, QPixmap
 import os
+import json
 
-from ..widgets.themed_widgets import (ThemedSplitter, ThemedLabel, ThemedRadioButton, 
+from ..widgets.themed_widgets import (ThemedSplitter, ThemedLabel, ThemedRadioButton,
                                     ThemedGroupBox, PurpleButton, GreenButton, ThemedCheckBox, ThemedSpinBox, ThemedLineEdit)
 from ..widgets.simple_widgets import ClickableLabel, ErrorLineEdit, ScaledPreviewLabel
-from ..widgets.dollar_variable_widgets import (DollarVariableLineEdit, DollarVariableSpinBox, 
+from ..widgets.dollar_variable_widgets import (DollarVariableLineEdit, DollarVariableSpinBox,
                                              DollarVariableCheckBox, DollarVariableRadioGroup)
 from .widgets.frame_preview import FramePreview
 from .widgets.order_widget import OrderWidget
+from ..dialogs.spreadsheet_picker_dialog import SpreadsheetPickerDialog
 
 
 class FrameTab(QWidget):
@@ -43,10 +45,15 @@ class FrameTab(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.main_window = parent
-        
+
         # MARK: - Auto-calculation control
         self._auto_calculation_running = False
-        
+
+        # MARK: - Spreadsheet import state
+        self._spreadsheet_file: str | None = None
+        self._spreadsheet_last_row: int | None = None  # 0-based index into data rows
+        self._load_spreadsheet_memory()
+
         # MARK: - UI Setup
         self.setup_ui()
         self.apply_styling()
@@ -227,7 +234,10 @@ class FrameTab(QWidget):
         # Preview area
         self.preview = FramePreview()
         layout.addWidget(self.preview, 1)
-        
+
+        # Spreadsheet import section
+        layout.addWidget(self._create_spreadsheet_section())
+
         return widget
     
     def create_right_panel(self):
@@ -1097,6 +1107,154 @@ class FrameTab(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             new_gcode = dialog.get_gcode()
             self.main_window.update_current_gcodes("left_gcode", new_gcode)
+
+    # MARK: - Spreadsheet Import
+
+    _SPREADSHEET_MEMORY_FILE = os.path.join("profiles", "spreadsheet_memory.json")
+    _SPREADSHEET_FILTER = "Spreadsheet Files (*.xlsx *.ods *.csv *.xls *.xlsm);;All Files (*)"
+
+    def _load_spreadsheet_memory(self):
+        try:
+            with open(self._SPREADSHEET_MEMORY_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            path = data.get("file_path")
+            if path and os.path.isfile(path):
+                self._spreadsheet_file = path
+            self._spreadsheet_last_row = data.get("last_row_index")
+        except Exception:
+            pass
+
+    def _save_spreadsheet_memory(self):
+        try:
+            os.makedirs(os.path.dirname(self._SPREADSHEET_MEMORY_FILE), exist_ok=True)
+            with open(self._SPREADSHEET_MEMORY_FILE, "w", encoding="utf-8") as f:
+                json.dump({
+                    "file_path": self._spreadsheet_file,
+                    "last_row_index": self._spreadsheet_last_row,
+                }, f, indent=2)
+        except Exception:
+            pass
+
+    def _create_spreadsheet_section(self):
+        group = ThemedGroupBox("Import from Spreadsheet")
+        layout = QVBoxLayout()
+        group.setLayout(layout)
+
+        # File path row
+        file_row = QHBoxLayout()
+        self._ss_file_label = ThemedLabel("None")
+        self._ss_file_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self._ss_file_label.setStyleSheet("color: #6f779a; font-style: italic;")
+        if self._spreadsheet_file:
+            self._ss_file_label.setText(os.path.basename(self._spreadsheet_file))
+            self._ss_file_label.setToolTip(self._spreadsheet_file)
+            self._ss_file_label.setStyleSheet("color: #ffffff;")
+        file_row.addWidget(self._ss_file_label, 1)
+
+        browse_btn = PurpleButton("Browse")
+        browse_btn.setFixedWidth(80)
+        browse_btn.clicked.connect(self._on_browse_spreadsheet)
+        file_row.addWidget(browse_btn)
+        layout.addLayout(file_row)
+
+        # Pick button
+        self._ss_pick_btn = GreenButton("Pick Row")
+        self._ss_pick_btn.setEnabled(bool(self._spreadsheet_file))
+        self._ss_pick_btn.clicked.connect(self._on_pick_spreadsheet)
+        layout.addWidget(self._ss_pick_btn)
+
+        return group
+
+    def _on_browse_spreadsheet(self):
+        start_dir = os.path.dirname(self._spreadsheet_file) if self._spreadsheet_file else ""
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select Spreadsheet File", start_dir, self._SPREADSHEET_FILTER
+        )
+        if not path:
+            return
+        self._spreadsheet_file = path
+        self._ss_file_label.setText(os.path.basename(path))
+        self._ss_file_label.setToolTip(path)
+        self._ss_file_label.setStyleSheet("color: #ffffff;")
+        self._ss_pick_btn.setEnabled(True)
+        self._save_spreadsheet_memory()
+
+    # Variables that are overridden by an auto-calculation flag.
+    # Key = variable name, Value = the auto flag that controls it.
+    _AUTO_GUARDS = {
+        "lock_position":  "lock_auto",
+        "lock_y_offset":  "lock_y_auto",
+        "hinge1_position": "hinge_auto",
+        "hinge2_position": "hinge_auto",
+        "hinge3_position": "hinge_auto",
+        "hinge4_position": "hinge_auto",
+        "hinge_y_offset": "hinge_y_auto",
+        "pm1_position":   "pm_auto",
+        "pm2_position":   "pm_auto",
+        "pm3_position":   "pm_auto",
+        "pm4_position":   "pm_auto",
+    }
+
+    def _on_pick_spreadsheet(self):
+        if not self._spreadsheet_file:
+            return
+        if not self.main_window:
+            return
+
+        known_vars = self.main_window.dollar_variables
+
+        dialog = SpreadsheetPickerDialog(
+            file_path=self._spreadsheet_file,
+            known_variables=known_vars,
+            last_row_index=self._spreadsheet_last_row,
+            parent=self,
+        )
+
+        if dialog.exec() != SpreadsheetPickerDialog.Accepted:
+            return
+
+        if not dialog.values_to_apply:
+            QMessageBox.information(self, "No Values", "No recognised variable columns found in the selected row.")
+            return
+
+        # Coerce string values to the correct type
+        coerced = {}
+        for var_name, raw_val in dialog.values_to_apply.items():
+            current = known_vars.get(var_name)
+            coerced[var_name] = self._coerce_spreadsheet_value(raw_val, current)
+
+        # For any auto-controlled variable we are about to import, disable the
+        # corresponding auto flag in the same batch so auto-calc won't overwrite it.
+        auto_flags_to_clear = set()
+        for var_name in coerced:
+            flag = self._AUTO_GUARDS.get(var_name)
+            if flag and known_vars.get(flag):
+                auto_flags_to_clear.add(flag)
+        for flag in auto_flags_to_clear:
+            coerced[flag] = 0
+
+        self.main_window.update_dollar_variables(coerced)
+
+        # Persist the chosen row
+        self._spreadsheet_last_row = dialog.picked_row_index
+        self._save_spreadsheet_memory()
+
+    @staticmethod
+    def _coerce_spreadsheet_value(raw: str, current):
+        """Convert a string cell value to match the type of the existing variable."""
+        if isinstance(current, bool):
+            return raw.strip().lower() in ("1", "true", "yes")
+        if isinstance(current, int):
+            try:
+                return int(float(raw.strip()))
+            except ValueError:
+                return current
+        if isinstance(current, float):
+            try:
+                return float(raw.strip())
+            except ValueError:
+                return current
+        return raw  # str (e.g. orientation "right"/"left")
 
 
 # MARK: - Simplified Dollar Variable Widgets
