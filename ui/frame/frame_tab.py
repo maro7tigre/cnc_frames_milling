@@ -504,10 +504,10 @@ class FrameTab(QWidget):
             door_width = self.main_window.get_dollar_variable("door_width")
             
             if frame_width is not None and door_width is not None:
-                if door_width <= 45:
+                if door_width <= 50:
                     return frame_width - door_width / 2
                 else:
-                    return frame_width - 45 / 2
+                    return frame_width - 50 / 2
         except (ValueError, TypeError):
             pass
         return None
