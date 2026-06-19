@@ -8,7 +8,6 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QB
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QDoubleValidator, QPixmap, QFont
 import os
-import json
 
 from ..widgets.themed_widgets import (ThemedSplitter, ThemedLabel, ThemedRadioButton,
                                     ThemedGroupBox, PurpleButton, GreenButton, ThemedCheckBox, ThemedSpinBox, ThemedLineEdit)
@@ -54,7 +53,6 @@ class FrameTab(QWidget):
         self._spreadsheet_last_row: int | None = None  # 0-based index into data rows
         self._ss_is_temp: bool = False          # True when file was auto-created (not yet bundled)
         self._ss_picked_info: dict | None = None  # display data for the last picked row
-        self._load_spreadsheet_memory()
 
         # MARK: - UI Setup
         self.setup_ui()
@@ -1112,30 +1110,7 @@ class FrameTab(QWidget):
 
     # MARK: - Spreadsheet Import
 
-    _SPREADSHEET_MEMORY_FILE = os.path.join("profiles", "spreadsheet_memory.json")
     _SPREADSHEET_FILTER = "Spreadsheet Files (*.xlsx *.ods *.csv *.xls *.xlsm);;All Files (*)"
-
-    def _load_spreadsheet_memory(self):
-        try:
-            with open(self._SPREADSHEET_MEMORY_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            path = data.get("file_path")
-            if path and os.path.isfile(path):
-                self._spreadsheet_file = path
-            self._spreadsheet_last_row = data.get("last_row_index")
-        except Exception:
-            pass
-
-    def _save_spreadsheet_memory(self):
-        try:
-            os.makedirs(os.path.dirname(self._SPREADSHEET_MEMORY_FILE), exist_ok=True)
-            with open(self._SPREADSHEET_MEMORY_FILE, "w", encoding="utf-8") as f:
-                json.dump({
-                    "file_path": self._spreadsheet_file,
-                    "last_row_index": self._spreadsheet_last_row,
-                }, f, indent=2)
-        except Exception:
-            pass
 
     def _create_spreadsheet_section(self):
         group = ThemedGroupBox("Import from Spreadsheet")
@@ -1260,7 +1235,6 @@ class FrameTab(QWidget):
         self._ss_is_temp = False
         self._update_ss_file_label()
         self._ss_pick_btn.setEnabled(True)
-        self._save_spreadsheet_memory()
 
     # Variables that are overridden by an auto-calculation flag.
     # Key = variable name, Value = the auto flag that controls it.
@@ -1291,6 +1265,15 @@ class FrameTab(QWidget):
         profiles_dir = "profiles"
         os.makedirs(profiles_dir, exist_ok=True)
 
+        # Remove any leftover temp files (both formats) so only one ever exists
+        for _name in ("temp_spreadsheet.xlsx", "temp_spreadsheet.csv"):
+            _p = os.path.join(profiles_dir, _name)
+            try:
+                if os.path.exists(_p):
+                    os.remove(_p)
+            except Exception:
+                pass
+
         # Try xlsx first; fall back to csv if openpyxl is missing
         path = os.path.join(profiles_dir, "temp_spreadsheet.xlsx")
         try:
@@ -1310,7 +1293,6 @@ class FrameTab(QWidget):
         self._ss_is_temp = True
         self._update_ss_file_label()
         self._ss_pick_btn.setEnabled(True)
-        self._save_spreadsheet_memory()
 
         # Open immediately in edit mode
         self._on_pick_spreadsheet(start_in_edit_mode=True)
@@ -1356,9 +1338,8 @@ class FrameTab(QWidget):
 
         self.main_window.update_dollar_variables(coerced)
 
-        # Persist the chosen row
+        # Keep last-row index in memory (project-only, not persisted to disk)
         self._spreadsheet_last_row = dialog.picked_row_index
-        self._save_spreadsheet_memory()
 
         # Update info chips in the tab
         self._ss_picked_info = getattr(dialog, 'picked_display_data', {})
@@ -1389,7 +1370,6 @@ class FrameTab(QWidget):
             self._spreadsheet_file = ss_dest
             self._ss_is_temp = False
             self._update_ss_file_label()
-            self._save_spreadsheet_memory()
             return ss_dest
         except Exception:
             return self._spreadsheet_file
