@@ -6,7 +6,7 @@ Clean architecture with predictable update flow and proper separation of concern
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QFormLayout, QButtonGroup, QSizePolicy, QFileDialog, QMessageBox
 from PySide6.QtCore import Signal, Qt
-from PySide6.QtGui import QDoubleValidator, QPixmap
+from PySide6.QtGui import QDoubleValidator, QPixmap, QFont
 import os
 import json
 
@@ -52,6 +52,8 @@ class FrameTab(QWidget):
         # MARK: - Spreadsheet import state
         self._spreadsheet_file: str | None = None
         self._spreadsheet_last_row: int | None = None  # 0-based index into data rows
+        self._ss_is_temp: bool = False          # True when file was auto-created (not yet bundled)
+        self._ss_picked_info: dict | None = None  # display data for the last picked row
         self._load_spreadsheet_memory()
 
         # MARK: - UI Setup
@@ -1140,30 +1142,112 @@ class FrameTab(QWidget):
         layout = QVBoxLayout()
         group.setLayout(layout)
 
-        # File path row
+        # Row 1: file label + Browse + Create on the same line
         file_row = QHBoxLayout()
+        file_row.setSpacing(6)
+
         self._ss_file_label = ThemedLabel("None")
         self._ss_file_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        self._ss_file_label.setStyleSheet("color: #6f779a; font-style: italic;")
-        if self._spreadsheet_file:
-            self._ss_file_label.setText(os.path.basename(self._spreadsheet_file))
-            self._ss_file_label.setToolTip(self._spreadsheet_file)
-            self._ss_file_label.setStyleSheet("color: #ffffff;")
+        self._ss_file_label.setStyleSheet("color: #6f779a; font-style: italic; font-family: Consolas; font-size: 10px;")
+        self._ss_file_label.setMinimumWidth(0)
         file_row.addWidget(self._ss_file_label, 1)
 
         browse_btn = PurpleButton("Browse")
-        browse_btn.setFixedWidth(80)
+        browse_btn.setFixedWidth(72)
         browse_btn.clicked.connect(self._on_browse_spreadsheet)
         file_row.addWidget(browse_btn)
+
+        create_btn = PurpleButton("Create")
+        create_btn.setFixedWidth(72)
+        create_btn.clicked.connect(self._on_create_spreadsheet)
+        file_row.addWidget(create_btn)
         layout.addLayout(file_row)
 
-        # Pick button
+        # Row 2: picked-row info chips (hidden until a row is picked)
+        info_row = QHBoxLayout()
+        info_row.setSpacing(6)
+        info_row.setContentsMargins(0, 0, 0, 0)
+
+        def _chip(color: str) -> ThemedLabel:
+            lbl = ThemedLabel()
+            lbl.setFont(QFont("Consolas", 10))
+            lbl.setStyleSheet(
+                f"color: {color}; background: #1d1f28; border-radius: 3px; padding: 2px 6px;"
+            )
+            lbl.setVisible(False)
+            return lbl
+
+        self._ss_count_lbl  = _chip("#23c87b")
+        self._ss_height_lbl = _chip("#BB86FC")
+        self._ss_side_lbl   = _chip("#ffffff")
+        self._ss_width_lbl  = _chip("#BB86FC")
+        self._ss_total_lbl  = _chip("#8be9fd")
+
+        for lbl in [self._ss_count_lbl, self._ss_height_lbl,
+                    self._ss_side_lbl, self._ss_width_lbl, self._ss_total_lbl]:
+            info_row.addWidget(lbl)
+        info_row.addStretch()
+        layout.addLayout(info_row)
+
+        # Row 3: Pick button
         self._ss_pick_btn = GreenButton("Pick Row")
         self._ss_pick_btn.setEnabled(bool(self._spreadsheet_file))
         self._ss_pick_btn.clicked.connect(self._on_pick_spreadsheet)
         layout.addWidget(self._ss_pick_btn)
 
+        # Initialise label from loaded state
+        self._update_ss_file_label()
+
         return group
+
+    def _update_ss_file_label(self):
+        if not hasattr(self, '_ss_file_label'):
+            return
+        path = self._spreadsheet_file
+        if not path:
+            self._ss_file_label.setText("None")
+            self._ss_file_label.setToolTip("")
+            self._ss_file_label.setStyleSheet(
+                "color: #6f779a; font-style: italic; font-family: Consolas; font-size: 10px;"
+            )
+            return
+        # Show .../parent_folder/filename — truncate with ellipsis at start if long
+        parts = path.replace("\\", "/").split("/")
+        display = "/".join(parts[-2:]) if len(parts) >= 2 else parts[-1]
+        if len(display) > 42:
+            display = "..." + display[-39:]
+        elif path != display:
+            display = "..." + display
+        self._ss_file_label.setText(display)
+        self._ss_file_label.setToolTip(path)
+        self._ss_file_label.setStyleSheet(
+            "color: #ffffff; font-style: normal; font-family: Consolas; font-size: 10px;"
+        )
+
+    def _update_ss_info_labels(self):
+        info = self._ss_picked_info or {}
+        if not info:
+            for lbl in [self._ss_count_lbl, self._ss_height_lbl,
+                        self._ss_side_lbl, self._ss_width_lbl, self._ss_total_lbl]:
+                if hasattr(self, lbl.objectName() if lbl.objectName() else '_'):
+                    lbl.setVisible(False)
+            return
+
+        def _show(lbl, text):
+            lbl.setText(text)
+            lbl.setVisible(bool(text))
+
+        count  = info.get("count", 1)
+        height = info.get("frame_height", "")
+        side   = info.get("side", "")
+        width  = info.get("frame_width", "")
+        total  = info.get("frame total width", "")
+
+        _show(self._ss_count_lbl,  f"× {count}")
+        _show(self._ss_height_lbl, f"H: {height}" if height else "")
+        _show(self._ss_side_lbl,   side)
+        _show(self._ss_width_lbl,  f"W: {width}" if width else "")
+        _show(self._ss_total_lbl,  f"⟷ {total}" if total else "")
 
     def _on_browse_spreadsheet(self):
         start_dir = os.path.dirname(self._spreadsheet_file) if self._spreadsheet_file else ""
@@ -1173,9 +1257,8 @@ class FrameTab(QWidget):
         if not path:
             return
         self._spreadsheet_file = path
-        self._ss_file_label.setText(os.path.basename(path))
-        self._ss_file_label.setToolTip(path)
-        self._ss_file_label.setStyleSheet("color: #ffffff;")
+        self._ss_is_temp = False
+        self._update_ss_file_label()
         self._ss_pick_btn.setEnabled(True)
         self._save_spreadsheet_memory()
 
@@ -1195,7 +1278,44 @@ class FrameTab(QWidget):
         "pm4_position":   "pm_auto",
     }
 
-    def _on_pick_spreadsheet(self):
+    # Default columns created by the "Create" button (display-focused, not all variables)
+    _SPREADSHEET_DEFAULT_HEADERS = [
+        "frame_height", "door width", "frame total width", "frame_width", "side"
+    ]
+
+    def _on_create_spreadsheet(self):
+        """Create a temp spreadsheet with default columns (no Save-As dialog).
+        The file is bundled into the project folder when the project is saved."""
+        from ..dialogs.spreadsheet_picker_dialog import write_spreadsheet
+
+        profiles_dir = "profiles"
+        os.makedirs(profiles_dir, exist_ok=True)
+
+        # Try xlsx first; fall back to csv if openpyxl is missing
+        path = os.path.join(profiles_dir, "temp_spreadsheet.xlsx")
+        try:
+            write_spreadsheet(path, self._SPREADSHEET_DEFAULT_HEADERS, [])
+        except ImportError:
+            path = os.path.join(profiles_dir, "temp_spreadsheet.csv")
+            try:
+                write_spreadsheet(path, self._SPREADSHEET_DEFAULT_HEADERS, [])
+            except Exception as exc:
+                QMessageBox.critical(self, "Error", f"Could not create spreadsheet:\n{exc}")
+                return
+        except Exception as exc:
+            QMessageBox.critical(self, "Error", f"Could not create spreadsheet:\n{exc}")
+            return
+
+        self._spreadsheet_file = path
+        self._ss_is_temp = True
+        self._update_ss_file_label()
+        self._ss_pick_btn.setEnabled(True)
+        self._save_spreadsheet_memory()
+
+        # Open immediately in edit mode
+        self._on_pick_spreadsheet(start_in_edit_mode=True)
+
+    def _on_pick_spreadsheet(self, start_in_edit_mode: bool = False):
         if not self._spreadsheet_file:
             return
         if not self.main_window:
@@ -1208,6 +1328,7 @@ class FrameTab(QWidget):
             known_variables=known_vars,
             last_row_index=self._spreadsheet_last_row,
             parent=self,
+            start_in_edit_mode=start_in_edit_mode,
         )
 
         if dialog.exec() != SpreadsheetPickerDialog.Accepted:
@@ -1238,6 +1359,59 @@ class FrameTab(QWidget):
         # Persist the chosen row
         self._spreadsheet_last_row = dialog.picked_row_index
         self._save_spreadsheet_memory()
+
+        # Update info chips in the tab
+        self._ss_picked_info = getattr(dialog, 'picked_display_data', {})
+        if hasattr(self, '_ss_count_lbl'):
+            self._update_ss_info_labels()
+
+    def on_project_saved(self, project_filename: str) -> str | None:
+        """Copy temp spreadsheet into the project folder when the project is saved.
+        Returns the final spreadsheet path (updated if moved), or None if no spreadsheet."""
+        if not self._spreadsheet_file:
+            return None
+
+        if not self._ss_is_temp:
+            return self._spreadsheet_file
+
+        # Copy temp → project folder
+        import shutil
+        project_dir  = os.path.dirname(project_filename)
+        project_stem = os.path.splitext(os.path.basename(project_filename))[0]
+        ss_ext       = os.path.splitext(self._spreadsheet_file)[1]
+        ss_dest      = os.path.join(project_dir, f"{project_stem}_spreadsheet{ss_ext}")
+        try:
+            shutil.copy2(self._spreadsheet_file, ss_dest)
+            try:
+                os.remove(self._spreadsheet_file)
+            except Exception:
+                pass
+            self._spreadsheet_file = ss_dest
+            self._ss_is_temp = False
+            self._update_ss_file_label()
+            self._save_spreadsheet_memory()
+            return ss_dest
+        except Exception:
+            return self._spreadsheet_file
+
+    def on_project_loaded(self, data: dict):
+        """Restore spreadsheet state from a loaded project dict."""
+        ss_path = data.get("spreadsheet_file")
+        if ss_path and os.path.isfile(ss_path):
+            self._spreadsheet_file    = ss_path
+            self._spreadsheet_last_row = data.get("spreadsheet_last_row")
+            self._ss_is_temp          = False
+        else:
+            self._spreadsheet_file    = None
+            self._spreadsheet_last_row = None
+            self._ss_is_temp          = False
+
+        self._ss_picked_info = None
+        self._update_ss_file_label()
+        if hasattr(self, '_ss_pick_btn'):
+            self._ss_pick_btn.setEnabled(bool(self._spreadsheet_file))
+        if hasattr(self, '_ss_count_lbl'):
+            self._update_ss_info_labels()
 
     @staticmethod
     def _coerce_spreadsheet_value(raw: str, current):

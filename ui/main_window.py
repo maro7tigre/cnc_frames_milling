@@ -584,21 +584,31 @@ class MainWindow(QMainWindow):
         try:
             # Ensure projects directory exists
             os.makedirs(self.projects_dir, exist_ok=True)
-            
+
+            # Bundle spreadsheet (temp → project folder) before writing JSON
+            ss_path = None
+            ss_last_row = None
+            if hasattr(self, 'frame_tab'):
+                ss_path = self.frame_tab.on_project_saved(filename)
+                ss_last_row = getattr(self.frame_tab, '_spreadsheet_last_row', None)
+
             # Create project data
             data = {
                 "dollar_variables": self.dollar_variables,
                 "generated_gcodes": self.generated_gcodes,
                 "timestamp": datetime.now().isoformat()
             }
-            
+            if ss_path:
+                data["spreadsheet_file"]    = ss_path
+                data["spreadsheet_last_row"] = ss_last_row
+
             # Save as single JSON file
             with open(filename, 'w') as f:
                 json.dump(data, f, indent=2)
-            
+
             QMessageBox.information(self, "Success", f"Project saved successfully to:\n{filename}")
             return True
-            
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save project: {str(e)}")
             return False
@@ -640,7 +650,11 @@ class MainWindow(QMainWindow):
                 if "generated_gcodes" in data:
                     self.generated_gcodes = data["generated_gcodes"]
                     self.events.emit_generated_updated()
-                
+
+                # Restore spreadsheet state
+                if hasattr(self, 'frame_tab') and "spreadsheet_file" in data:
+                    self.frame_tab.on_project_loaded(data)
+
                 QMessageBox.information(self, "Success", "Project loaded successfully!")
                 return True
         
